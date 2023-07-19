@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\UserAuthController;
+use App\Http\Controllers\API\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,4 +23,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('profile', [UserAuthController::class, 'profile']);
     Route::post('change-password', [UserAuthController::class, 'changePassword']);
     Route::post('profile-update', [UserAuthController::class, 'profileUpdate']);
+
+    Route::apiResource('user', UserController::class);
 });

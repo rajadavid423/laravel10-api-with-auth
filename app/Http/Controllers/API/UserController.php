@@ -3,69 +3,82 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\API\BaseController as BaseController;
+use App\Http\Requests\UserApiRequest;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 
 class UserController extends BaseController
 {
     /**
-     * Login api
-     *
+     * List All Users
      * @return JsonResponse
      */
-    public function login(Request $request)
+    public function index()
     {
-        $validator = Validator::make($request->all(), [
-            'email' => ['required', 'max:50'],
-            'password' => ['required', 'string', 'min:8', 'max:20'],
-        ]);
-
-        if ($validator->fails()) {
-            return $this->sendError('Validation Error.', $validator->errors(), 422);
-        }
-
-        if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
-            $user = Auth::user();
-            $success['token'] = $user->createToken('MyApp')->accessToken;
-            $success['token_type'] = 'Bearer';
-            $success['user'] = $user;
-
-            return $this->sendResponse($success, 'User login successfully.');
-        } else {
-            return $this->sendError('Unauthorised.', ['error' => 'Invalid Login Details'], 401);
+        try {
+            $users = User::all();
+            return $this->sendResponse($users, 'Success!');
+        } catch (\Exception $exception) {
+            info('Error::Place@UserController@index - ' . $exception->getMessage());
+            return $this->sendError('Error.', 'Something went wrong', 500);
         }
     }
 
     /**
-     * Logout api
-     *
+     * @param UserApiRequest $request
      * @return JsonResponse
      */
-    public function logout(Request $request)
+    public function store(UserApiRequest $request)
     {
-        if (Auth::user()) {
-            $user = Auth::user()->token();
-            $user->revoke();
+        try {
+            $input = $request->only('name', 'email', 'phone', 'dob', 'password');
+            User::create($input);
 
-            return $this->sendResponse(null, 'You have been successfully logged out!');
-        } else {
-            return $this->sendError('Unauthorised.', ['error' => 'Unauthorised'], 401);
+            return $this->sendResponse([], 'User Created Successfully!');
+        } catch (\Exception $exception) {
+            info('Error::Place@UserController@store - ' . $exception->getMessage());
+            return $this->sendError('Error.', 'Something went wrong', 500);
         }
     }
 
     /**
-     * Profile api
-     *
+     * Get single user details
      * @return JsonResponse
      */
-    public function profile(Request $request)
+    public function show(User $user)
     {
-        if (Auth::user()) {
-            return $this->sendResponse(Auth::user(), 'Success!');
-        } else {
-            return $this->sendError('Unauthorised.', ['error' => 'Unauthorised'], 401);
+        try {
+            return $this->sendResponse($user, 'Success!');
+        } catch (\Exception $exception) {
+            info('Error::Place@UserController@show - ' . $exception->getMessage());
+            return $this->sendError('Error.', 'Something went wrong', 500);
+        }
+    }
+
+    /**
+     * Update single user details
+     * @return JsonResponse
+     */
+    public function update(UserApiRequest $request, User $user)
+    {
+        try {
+            $input = $request->only('name', 'email', 'phone', 'dob', 'password');
+            $user->update($input);
+            return $this->sendResponse([], 'Success!');
+        } catch (\Exception $exception) {
+            info('Error::Place@UserController@update - ' . $exception->getMessage());
+            return $this->sendError('Error.', 'Something went wrong', 500);
+        }
+    }
+
+    public function destroy(User $user)
+    {
+        try {
+            $user->delete();
+            return $this->sendResponse([], 'Deleted Successfully!');
+        } catch (\Exception $exception) {
+            info('Error::Place@UserController@destroy - ' . $exception->getMessage());
+            return $this->sendError('Error.', 'Something went wrong', 500);
         }
     }
 }
